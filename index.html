@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hudební noty</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f7f3eb;
+      --panel: #ffffff;
+      --ink: #171717;
+      --muted: #666666;
+      --line: #d9d4ca;
+      --good: #197a3a;
+      --try: #a94b12;
+      --shadow: 0 18px 45px rgba(26, 24, 20, 0.13);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.7), rgba(255,255,255,0.15)),
+        var(--paper);
+      display: grid;
+      place-items: center;
+      padding: 22px;
+    }
+
+    main {
+      width: min(1120px, 100%);
+      display: grid;
+      gap: 18px;
+    }
+
+    header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3.6rem);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .scoreboard {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .score {
+      min-width: 156px;
+      border: 2px solid var(--ink);
+      border-radius: 8px;
+      padding: 12px 16px;
+      background: var(--panel);
+      font-size: 1.25rem;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .reset {
+      border: 2px solid var(--ink);
+      border-radius: 8px;
+      background: var(--ink);
+      color: #ffffff;
+      min-height: 58px;
+      padding: 0 24px;
+      font-size: 1.15rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .board {
+      background: var(--panel);
+      border: 2px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: clamp(14px, 3vw, 28px);
+      display: grid;
+      gap: 18px;
+    }
+
+    .staff-wrap {
+      width: 100%;
+      min-height: 330px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: #fffdfa;
+      border: 1px solid var(--line);
+      overflow: hidden;
+    }
+
+    svg {
+      width: min(900px, 100%);
+      height: auto;
+      display: block;
+      touch-action: manipulation;
+    }
+
+    .message {
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      place-items: center;
+      font-size: clamp(1.45rem, 3vw, 2.3rem);
+      font-weight: 900;
+      text-align: center;
+    }
+
+    .message .mark {
+      display: inline-grid;
+      place-items: center;
+      width: 1.25em;
+      height: 1.25em;
+      border: 0.12em solid currentColor;
+      border-radius: 50%;
+      font-size: 0.86em;
+      line-height: 1;
+      flex: 0 0 auto;
+    }
+
+    .message.good {
+      color: var(--good);
+    }
+
+    .message.try {
+      color: var(--try);
+    }
+
+    .answers {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(78px, 1fr));
+      gap: 12px;
+    }
+
+    .answer {
+      min-height: 92px;
+      border: 2px solid var(--ink);
+      border-radius: 8px;
+      background: #ffffff;
+      color: var(--ink);
+      font-size: clamp(1.7rem, 3.4vw, 2.8rem);
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 8px 0 var(--ink);
+      transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+      touch-action: manipulation;
+    }
+
+    .answer:hover,
+    .answer:focus-visible {
+      background: #f0f0f0;
+      outline: none;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 0 var(--ink);
+    }
+
+    .answer:active {
+      transform: translateY(5px);
+      box-shadow: 0 3px 0 var(--ink);
+    }
+
+    .answer:disabled {
+      cursor: wait;
+      opacity: 0.72;
+    }
+
+    @media (max-width: 760px) {
+      body {
+        padding: 14px;
+      }
+
+      header {
+        align-items: stretch;
+      }
+
+      .scoreboard {
+        width: 100%;
+      }
+
+      .score,
+      .reset {
+        flex: 1;
+      }
+
+      .staff-wrap {
+        min-height: 260px;
+      }
+
+      .answers {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .answer {
+        min-height: 82px;
+      }
+    }
+
+    @media (max-width: 430px) {
+      .answers {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Poznej notu</h1>
+      <div class="scoreboard" aria-live="polite">
+        <div class="score">Skóre: <span id="score">0</span></div>
+        <button class="reset" id="reset" type="button">Znovu</button>
+      </div>
+    </header>
+
+    <section class="board" aria-label="Cvičení poznávání not">
+      <div class="staff-wrap">
+        <svg id="scoreSvg" viewBox="0 0 900 340" role="img" aria-labelledby="noteTitle noteDesc">
+          <title id="noteTitle">Nota v houslovém klíči</title>
+          <desc id="noteDesc">Vyber správné písmeno podle polohy noty v notové osnově.</desc>
+          <g id="staff" stroke="#111111" stroke-width="4" stroke-linecap="round">
+            <line x1="150" y1="120" x2="805" y2="120"></line>
+            <line x1="150" y1="146" x2="805" y2="146"></line>
+            <line x1="150" y1="172" x2="805" y2="172"></line>
+            <line x1="150" y1="198" x2="805" y2="198"></line>
+            <line x1="150" y1="224" x2="805" y2="224"></line>
+          </g>
+          <text x="172" y="240"
+                font-family="Georgia, 'Times New Roman', serif"
+                font-size="205"
+                fill="#111111"
+                aria-hidden="true">&#119070;</text>
+          <g id="ledger" stroke="#111111" stroke-width="4" stroke-linecap="round"></g>
+          <g id="note" fill="#111111" stroke="#111111" stroke-width="3.2">
+            <ellipse id="noteHead" cx="566" cy="224" rx="22" ry="15.5" transform="rotate(-18 566 224)"></ellipse>
+            <line id="stem" x1="586" y1="220" x2="586" y2="112" stroke-linecap="round"></line>
+          </g>
+        </svg>
+      </div>
+
+      <div class="message" id="message" aria-live="assertive">Klikni na správné písmeno</div>
+
+      <div class="answers" aria-label="Odpovědi">
+        <button class="answer" type="button" data-answer="C">C</button>
+        <button class="answer" type="button" data-answer="D">D</button>
+        <button class="answer" type="button" data-answer="E">E</button>
+        <button class="answer" type="button" data-answer="F">F</button>
+        <button class="answer" type="button" data-answer="G">G</button>
+        <button class="answer" type="button" data-answer="A">A</button>
+        <button class="answer" type="button" data-answer="H">H</button>
+        <button class="answer" type="button" data-answer="C²">C²</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const notes = [
+      { name: "C", y: 250, ledger: true },
+      { name: "D", y: 237, ledger: false },
+      { name: "E", y: 224, ledger: false },
+      { name: "F", y: 211, ledger: false },
+      { name: "G", y: 198, ledger: false },
+      { name: "A", y: 185, ledger: false },
+      { name: "H", y: 172, ledger: false },
+      { name: "C²", y: 159, ledger: false }
+    ];
+
+    const scoreEl = document.querySelector("#score");
+    const messageEl = document.querySelector("#message");
+    const noteHead = document.querySelector("#noteHead");
+    const stem = document.querySelector("#stem");
+    const ledger = document.querySelector("#ledger");
+    const buttons = [...document.querySelectorAll(".answer")];
+    const reset = document.querySelector("#reset");
+
+    let currentNote = null;
+    let lastNote = null;
+    let score = 0;
+    let loadingNext = false;
+
+    function setMessage(text, type = "", mark = "") {
+      messageEl.replaceChildren();
+      if (mark) {
+        const icon = document.createElement("span");
+        icon.className = "mark";
+        icon.setAttribute("aria-hidden", "true");
+        icon.textContent = mark;
+        messageEl.append(icon);
+      }
+      messageEl.append(document.createTextNode(text));
+      messageEl.className = `message ${type}`.trim();
+    }
+
+    function drawNote(note) {
+      const cx = 566;
+      const stemX = 586;
+      noteHead.setAttribute("cy", note.y);
+      noteHead.setAttribute("transform", `rotate(-18 ${cx} ${note.y})`);
+      stem.setAttribute("x1", stemX);
+      stem.setAttribute("x2", stemX);
+      stem.setAttribute("y1", note.y - 4);
+      stem.setAttribute("y2", note.y - 106);
+      ledger.innerHTML = note.ledger
+        ? '<line x1="526" y1="250" x2="606" y2="250"></line>'
+        : "";
+    }
+
+    function nextNote() {
+      let pool = notes.filter(note => note !== lastNote);
+      currentNote = pool[Math.floor(Math.random() * pool.length)];
+      lastNote = currentNote;
+      drawNote(currentNote);
+      loadingNext = false;
+      buttons.forEach(button => button.disabled = false);
+    }
+
+    function choose(answer) {
+      if (loadingNext) return;
+
+      if (answer === currentNote.name) {
+        score += 1;
+        scoreEl.textContent = score;
+        setMessage("Správně!", "good", "✓");
+        loadingNext = true;
+        buttons.forEach(button => button.disabled = true);
+        window.setTimeout(() => {
+          setMessage("Klikni na správné písmeno");
+          nextNote();
+        }, 750);
+      } else {
+        setMessage("Zkus to znovu", "try", "✕");
+      }
+    }
+
+    buttons.forEach(button => {
+      button.addEventListener("click", () => choose(button.dataset.answer));
+    });
+
+    reset.addEventListener("click", () => {
+      score = 0;
+      scoreEl.textContent = score;
+      setMessage("Klikni na správné písmeno");
+      nextNote();
+    });
+
+    nextNote();
+  </script>
+</body>
+</html>
