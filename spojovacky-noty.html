@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Spojovačky noty</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f7f3eb;
+      --panel: #ffffff;
+      --ink: #171717;
+      --line: #d9d4ca;
+      --good: #197a3a;
+      --try: #a92525;
+      --shadow: 0 18px 45px rgba(26, 24, 20, 0.13);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.7), rgba(255,255,255,0.15)),
+        var(--paper);
+      display: grid;
+      place-items: center;
+      padding: 22px;
+    }
+
+    main {
+      width: min(1120px, 100%);
+      display: grid;
+      gap: 18px;
+    }
+
+    header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3.6rem);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .scoreboard {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .score {
+      min-width: 300px;
+      border: 2px solid var(--ink);
+      border-radius: 8px;
+      padding: 12px 16px;
+      background: var(--panel);
+      font-size: 1.25rem;
+      font-weight: 800;
+      text-align: center;
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .reset {
+      border: 2px solid var(--ink);
+      border-radius: 8px;
+      background: var(--ink);
+      color: #ffffff;
+      min-height: 58px;
+      padding: 0 24px;
+      font-size: 1.15rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .board {
+      background: var(--panel);
+      border: 2px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: clamp(14px, 3vw, 28px);
+      display: grid;
+      gap: 18px;
+    }
+
+    .work-area {
+      width: 100%;
+      min-height: 540px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: #fffdfa;
+      border: 1px solid var(--line);
+      overflow: hidden;
+    }
+
+    .matching {
+      position: relative;
+      width: 100%;
+      display: grid;
+      grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
+      gap: clamp(18px, 5vw, 72px);
+      padding: clamp(12px, 2vw, 20px);
+    }
+
+    .column {
+      display: grid;
+      gap: 16px;
+      z-index: 1;
+    }
+
+    .match-card {
+      min-height: 132px;
+      border: 3px solid var(--ink);
+      border-radius: 8px;
+      background: #fffdfa;
+      cursor: pointer;
+      transition: transform 120ms ease, background 120ms ease, border-color 120ms ease, opacity 120ms ease;
+      touch-action: manipulation;
+    }
+
+    .letter-card {
+      display: grid;
+      place-items: center;
+      font-size: clamp(2rem, 4.5vw, 3.6rem);
+      font-weight: 900;
+      letter-spacing: 0;
+    }
+
+    .note-card {
+      padding: 0;
+    }
+
+    .note-card svg {
+      width: 100%;
+      height: 148px;
+      display: block;
+    }
+
+    .match-card:hover,
+    .match-card:focus-visible,
+    .match-card.selected {
+      outline: none;
+      transform: translateY(-2px);
+      background: #fff8df;
+    }
+
+    .match-card.done {
+      border-color: var(--good);
+      cursor: default;
+      opacity: 0.84;
+    }
+
+    .match-card.wrong {
+      border-color: var(--try);
+      background: #fff3f3;
+    }
+
+    .connectors {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .message {
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      font-size: clamp(1.35rem, 3vw, 2.25rem);
+      font-weight: 900;
+      text-align: center;
+    }
+
+    .message.good {
+      color: var(--good);
+    }
+
+    .message.try {
+      color: var(--try);
+    }
+
+    .message .mark {
+      display: inline-grid;
+      place-items: center;
+      width: 1.25em;
+      height: 1.25em;
+      border: 0.12em solid currentColor;
+      border-radius: 50%;
+      font-size: 0.86em;
+      line-height: 1;
+      flex: 0 0 auto;
+    }
+
+    @media (max-width: 760px) {
+      body {
+        padding: 14px;
+      }
+
+      header {
+        align-items: stretch;
+      }
+
+      .scoreboard {
+        width: 100%;
+      }
+
+      .score,
+      .reset {
+        flex: 1;
+      }
+
+      .work-area {
+        min-height: 520px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .matching {
+        grid-template-columns: 1fr;
+        gap: 18px;
+      }
+
+      .work-area {
+        min-height: 1040px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Spojovačky noty</h1>
+      <div class="scoreboard" aria-live="polite">
+        <div class="score">
+          <span>Správně: <span id="correctScore">0</span></span>
+          <span>Špatně: <span id="wrongScore">0</span></span>
+        </div>
+        <button class="reset" id="reset" type="button">Znovu</button>
+      </div>
+    </header>
+
+    <section class="board" aria-label="Spojovačky not">
+      <div class="work-area">
+        <div class="matching" id="matching">
+          <svg class="connectors" id="connectors" aria-hidden="true"></svg>
+          <div class="column" id="leftColumn" aria-label="Písmena"></div>
+          <div class="column" id="rightColumn" aria-label="Noty v houslovém klíči"></div>
+        </div>
+      </div>
+
+      <div class="message" id="message" aria-live="assertive">Vyber písmeno vlevo a najdi správnou notu vpravo</div>
+    </section>
+  </main>
+
+  <script>
+    const allNotes = [
+      { name: "C", y: 102, ledger: true },
+      { name: "D", y: 96, ledger: false },
+      { name: "E", y: 90, ledger: false },
+      { name: "F", y: 84, ledger: false },
+      { name: "G", y: 78, ledger: false },
+      { name: "A", y: 72, ledger: false },
+      { name: "H", y: 66, ledger: false },
+      { name: "C²", y: 60, ledger: false }
+    ];
+
+    const correctScoreEl = document.querySelector("#correctScore");
+    const wrongScoreEl = document.querySelector("#wrongScore");
+    const messageEl = document.querySelector("#message");
+    const matching = document.querySelector("#matching");
+    const connectors = document.querySelector("#connectors");
+    const leftColumn = document.querySelector("#leftColumn");
+    const rightColumn = document.querySelector("#rightColumn");
+    const reset = document.querySelector("#reset");
+
+    let correctScore = 0;
+    let wrongScore = 0;
+    let selectedLeft = null;
+    let pairs = [];
+    let matchedIds = new Set();
+
+    function setMessage(text, type = "", mark = "") {
+      messageEl.replaceChildren();
+      if (mark) {
+        const icon = document.createElement("span");
+        icon.className = "mark";
+        icon.setAttribute("aria-hidden", "true");
+        icon.textContent = mark;
+        messageEl.append(icon);
+      }
+      messageEl.append(document.createTextNode(text));
+      messageEl.className = `message ${type}`.trim();
+    }
+
+    function shuffle(items) {
+      return [...items].sort(() => Math.random() - 0.5);
+    }
+
+    function makePairs() {
+      const groups = [];
+      const used = new Set();
+
+      while (groups.length < 3) {
+        const notes = shuffle(allNotes).slice(0, 3).sort((a, b) => b.y - a.y);
+        const key = notes.map(note => note.name).join("-");
+        if (!used.has(key)) {
+          used.add(key);
+          groups.push({ id: `pair-${groups.length}`, notes });
+        }
+      }
+
+      return groups;
+    }
+
+    function drawNote(note, x) {
+      const stemX = x + 11;
+      const stemTop = Math.max(18, note.y - 48);
+
+      return `
+          <g fill="#111111" stroke="#111111" stroke-width="2.6">
+            <ellipse cx="${x}" cy="${note.y}" rx="8.8" ry="6.3" transform="rotate(-18 ${x} ${note.y})"></ellipse>
+            <line x1="${stemX}" y1="${note.y - 2}" x2="${stemX}" y2="${stemTop}" stroke-linecap="round"></line>
+          </g>`;
+    }
+
+    function noteSvg(group) {
+      const xs = [188, 248, 308];
+
+      return `
+        <svg viewBox="0 0 360 132" role="img" aria-label="Noty ${group.notes.map(note => note.name).join(" ")}">
+          <g stroke="#111111" stroke-width="2.8" stroke-linecap="round">
+            <line x1="76" y1="42" x2="330" y2="42"></line>
+            <line x1="76" y1="54" x2="330" y2="54"></line>
+            <line x1="76" y1="66" x2="330" y2="66"></line>
+            <line x1="76" y1="78" x2="330" y2="78"></line>
+            <line x1="76" y1="90" x2="330" y2="90"></line>
+            ${group.notes.map((note, index) => note.ledger ? `<line x1="${xs[index] - 24}" y1="${note.y}" x2="${xs[index] + 24}" y2="${note.y}" stroke-width="3.2"></line>` : "").join("")}
+          </g>
+          <text x="82" y="104"
+                font-family="Georgia, 'Times New Roman', serif"
+                font-size="108"
+                fill="#111111"
+                aria-hidden="true">&#119070;</text>
+          ${group.notes.map((note, index) => drawNote(note, xs[index])).join("")}
+        </svg>`;
+    }
+
+    function createLetterCard(group) {
+      const button = document.createElement("button");
+      button.className = "match-card letter-card";
+      button.type = "button";
+      button.dataset.id = group.id;
+      button.dataset.side = "left";
+      button.textContent = group.notes.map(note => note.name).join(" ");
+      button.addEventListener("click", () => chooseCard(button));
+      return button;
+    }
+
+    function createNoteCard(group) {
+      const button = document.createElement("button");
+      button.className = "match-card note-card";
+      button.type = "button";
+      button.dataset.id = group.id;
+      button.dataset.side = "right";
+      button.innerHTML = noteSvg(group);
+      button.addEventListener("click", () => chooseCard(button));
+      return button;
+    }
+
+    function drawConnectors() {
+      const box = matching.getBoundingClientRect();
+      connectors.setAttribute("viewBox", `0 0 ${box.width} ${box.height}`);
+      connectors.innerHTML = "";
+
+      matchedIds.forEach(id => {
+        const left = leftColumn.querySelector(`[data-id="${id}"]`);
+        const right = rightColumn.querySelector(`[data-id="${id}"]`);
+        if (!left || !right) return;
+
+        const leftBox = left.getBoundingClientRect();
+        const rightBox = right.getBoundingClientRect();
+        const x1 = leftBox.right - box.left + 6;
+        const y1 = leftBox.top - box.top + leftBox.height / 2;
+        const x2 = rightBox.left - box.left - 6;
+        const y2 = rightBox.top - box.top + rightBox.height / 2;
+
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", x1);
+        line.setAttribute("y1", y1);
+        line.setAttribute("x2", x2);
+        line.setAttribute("y2", y2);
+        line.setAttribute("stroke", "#197a3a");
+        line.setAttribute("stroke-width", "5");
+        line.setAttribute("stroke-linecap", "round");
+        connectors.append(line);
+      });
+    }
+
+    function chooseCard(card) {
+      if (card.classList.contains("done")) return;
+
+      if (card.dataset.side === "left") {
+        if (selectedLeft) selectedLeft.classList.remove("selected");
+        selectedLeft = card;
+        selectedLeft.classList.add("selected");
+        setMessage("Teď vyber správnou notu vpravo");
+        return;
+      }
+
+      if (!selectedLeft) {
+        setMessage("Nejdřív vyber písmeno vlevo");
+        return;
+      }
+
+      if (selectedLeft.dataset.id === card.dataset.id) {
+        selectedLeft.classList.remove("selected", "wrong");
+        selectedLeft.classList.add("done");
+        card.classList.add("done");
+        matchedIds.add(card.dataset.id);
+        correctScore += 1;
+        correctScoreEl.textContent = correctScore;
+        selectedLeft = null;
+        setMessage("Správně!", "good", "✓");
+        drawConnectors();
+
+        if (matchedIds.size === pairs.length) {
+          window.setTimeout(() => {
+            setMessage("Hotovo!", "good", "✓");
+          }, 250);
+          window.setTimeout(() => {
+            newBoard();
+          }, 1200);
+        }
+      } else {
+        wrongScore += 1;
+        wrongScoreEl.textContent = wrongScore;
+        selectedLeft.classList.add("wrong");
+        card.classList.add("wrong");
+        setMessage("Zkus to znovu", "try", "✕");
+        window.setTimeout(() => {
+          selectedLeft?.classList.remove("wrong");
+          card.classList.remove("wrong");
+        }, 550);
+      }
+    }
+
+    function newBoard() {
+      pairs = makePairs();
+      matchedIds = new Set();
+      selectedLeft = null;
+      connectors.innerHTML = "";
+      leftColumn.replaceChildren(...shuffle(pairs).map(note => createLetterCard(note)));
+      rightColumn.replaceChildren(...shuffle(pairs).map(note => createNoteCard(note)));
+      setMessage("Vyber písmeno vlevo a najdi správnou notu vpravo");
+      window.requestAnimationFrame(drawConnectors);
+    }
+
+    reset.addEventListener("click", () => {
+      correctScore = 0;
+      wrongScore = 0;
+      correctScoreEl.textContent = correctScore;
+      wrongScoreEl.textContent = wrongScore;
+      newBoard();
+    });
+
+    window.addEventListener("resize", drawConnectors);
+    newBoard();
+  </script>
+</body>
+</html>
