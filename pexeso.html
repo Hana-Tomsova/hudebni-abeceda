@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pexeso</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      color-scheme: light;
+      --ink: #151515;
+      --muted: #5c5c5c;
+      --paper: #fbfaf6;
+      --panel: #ffffff;
+      --line: #d7d2c6;
+      --ok: #1f8a48;
+      --warm: #f1eadc;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.92)),
+        var(--paper);
+    }
+
+    main {
+      width: min(1120px, 100%);
+      margin: 0 auto;
+      padding: 22px clamp(14px, 3vw, 28px) 30px;
+    }
+
+    header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2.1rem, 5vw, 4rem);
+      line-height: 0.95;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: clamp(1rem, 2.5vw, 1.25rem);
+      font-weight: 750;
+    }
+
+    .home {
+      min-height: 52px;
+      padding: 0 18px;
+      border: 2px solid var(--ink);
+      border-radius: 8px;
+      color: var(--ink);
+      background: var(--panel);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat,
+    .round {
+      min-height: 64px;
+      padding: 12px 16px;
+      border: 2px solid var(--ink);
+      border-radius: 8px;
+      background: var(--panel);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: clamp(1.05rem, 2.4vw, 1.45rem);
+      font-weight: 900;
+    }
+
+    .round {
+      justify-content: flex-start;
+    }
+
+    button {
+      font: inherit;
+      color: inherit;
+    }
+
+    .reset {
+      min-height: 64px;
+      padding: 0 24px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--ink);
+      color: #ffffff;
+      font-size: clamp(1rem, 2.2vw, 1.25rem);
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .board-wrap {
+      padding: clamp(12px, 2.5vw, 22px);
+      border: 2px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.74);
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: clamp(8px, 1.8vw, 16px);
+    }
+
+    .card {
+      position: relative;
+      aspect-ratio: 1 / 1;
+      min-height: 110px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      cursor: pointer;
+      perspective: 900px;
+      padding: 0;
+    }
+
+    .card-inner {
+      position: absolute;
+      inset: 0;
+      border-radius: 8px;
+      transition: transform 220ms ease;
+      transform-style: preserve-3d;
+    }
+
+    .card.is-open .card-inner,
+    .card.is-matched .card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .face {
+      position: absolute;
+      inset: 0;
+      border-radius: 8px;
+      border: 3px solid var(--ink);
+      backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .back {
+      background:
+        radial-gradient(circle at 50% 42%, rgba(21, 21, 21, 0.08) 0 18%, transparent 19%),
+        var(--warm);
+    }
+
+    .back svg {
+      width: 52%;
+      height: 52%;
+    }
+
+    .front {
+      background: var(--panel);
+      transform: rotateY(180deg);
+    }
+
+    .card.is-matched .face {
+      border-color: var(--ok);
+      box-shadow: 0 0 0 4px rgba(31, 138, 72, 0.12);
+    }
+
+    .symbol {
+      width: 92%;
+      height: 92%;
+      display: block;
+    }
+
+    .message {
+      min-height: 54px;
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      text-align: center;
+      font-size: clamp(1.08rem, 2.8vw, 1.5rem);
+      font-weight: 900;
+      color: var(--muted);
+    }
+
+    .message.done {
+      color: var(--ok);
+    }
+
+    .next {
+      display: none;
+      width: min(360px, 100%);
+      min-height: 64px;
+      margin: 6px auto 0;
+      border: 0;
+      border-radius: 8px;
+      background: var(--ok);
+      color: #ffffff;
+      font-size: clamp(1.08rem, 2.6vw, 1.4rem);
+      font-weight: 950;
+      cursor: pointer;
+    }
+
+    .next.show {
+      display: block;
+    }
+
+    @media (max-width: 760px) {
+      main {
+        padding-top: 16px;
+      }
+
+      header {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .home {
+        align-self: flex-start;
+      }
+
+      .topbar {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .round {
+        grid-column: 1 / -1;
+      }
+
+      .reset {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .board {
+        gap: 8px;
+      }
+
+      .card {
+        min-height: 76px;
+      }
+
+      .face {
+        border-width: 2px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>Pexeso</h1>
+        <p class="subtitle">najdi stejné noty a rytmické hodnoty</p>
+      </div>
+      <a class="home" href="index.html">Zpět</a>
+    </header>
+
+    <section class="topbar" aria-label="Skóre">
+      <div class="round" id="roundLabel">Pexeso 1 / 5</div>
+      <div class="stat">Tahů: <span id="moves">0</span></div>
+      <button class="reset" type="button" id="reset">Znovu</button>
+    </section>
+
+    <section class="board-wrap">
+      <div class="board" id="board" aria-label="Hrací pole pexesa"></div>
+    </section>
+
+    <div class="message" id="message" aria-live="assertive">Otoč dvě kartičky</div>
+    <button class="next" type="button" id="next">Další pexeso</button>
+  </main>
+
+  <script>
+    const notes = {
+      C: { kind: "staff", y: 102, ledger: true },
+      D: { kind: "staff", y: 96 },
+      E: { kind: "staff", y: 90 },
+      F: { kind: "staff", y: 84 },
+      G: { kind: "staff", y: 78 },
+      A: { kind: "staff", y: 72 },
+      H: { kind: "staff", y: 66 },
+      C2: { kind: "staff", y: 60 }
+    };
+
+    const sets = [
+      [
+        ["C", notes.C], ["D", notes.D], ["E", notes.E], ["F", notes.F],
+        ["G", notes.G], ["A", notes.A], ["H", notes.H], ["C2", notes.C2]
+      ],
+      [
+        ["whole", { kind: "rhythm", items: ["whole"] }],
+        ["halfDot", { kind: "rhythm", items: ["halfDot"] }],
+        ["half", { kind: "rhythm", items: ["half"] }],
+        ["quarter", { kind: "rhythm", items: ["quarter"] }],
+        ["twoQuarters", { kind: "rhythm", items: ["quarter", "quarter"] }],
+        ["halfQuarter", { kind: "rhythm", items: ["half", "quarter"] }],
+        ["quarterHalf", { kind: "rhythm", items: ["quarter", "half"] }],
+        ["fourQuarters", { kind: "rhythm", items: ["quarter", "quarter", "quarter", "quarter"] }]
+      ],
+      [
+        ["quarterRest", { kind: "rhythm", items: ["quarterRest"] }],
+        ["halfRest", { kind: "rhythm", items: ["halfRest"] }],
+        ["wholeRest", { kind: "rhythm", items: ["wholeRest"] }],
+        ["quarterAndRest", { kind: "rhythm", items: ["quarter", "quarterRest"] }],
+        ["restAndQuarter", { kind: "rhythm", items: ["quarterRest", "quarter"] }],
+        ["halfAndRest", { kind: "rhythm", items: ["half", "halfRest"] }],
+        ["restAndHalf", { kind: "rhythm", items: ["halfRest", "half"] }],
+        ["twoRests", { kind: "rhythm", items: ["quarterRest", "quarterRest"] }]
+      ],
+      [
+        ["eighth", { kind: "rhythm", items: ["eighth"] }],
+        ["eighthRest", { kind: "rhythm", items: ["eighthRest"] }],
+        ["beamed", { kind: "rhythm", items: ["beamedEighths"] }],
+        ["eighthAndRest", { kind: "rhythm", items: ["eighth", "eighthRest"] }],
+        ["restAndEighth", { kind: "rhythm", items: ["eighthRest", "eighth"] }],
+        ["twoBeams", { kind: "rhythm", items: ["beamedEighths", "beamedEighths"] }],
+        ["quarterBeam", { kind: "rhythm", items: ["quarter", "beamedEighths"] }],
+        ["beamQuarter", { kind: "rhythm", items: ["beamedEighths", "quarter"] }]
+      ],
+      [
+        ["mixC", notes.C],
+        ["mixE", notes.E],
+        ["mixG", notes.G],
+        ["mixC2", notes.C2],
+        ["mixQuarter", { kind: "rhythm", items: ["quarter"] }],
+        ["mixHalf", { kind: "rhythm", items: ["half"] }],
+        ["mixEighth", { kind: "rhythm", items: ["eighth"] }],
+        ["mixRest", { kind: "rhythm", items: ["quarterRest"] }]
+      ]
+    ];
+
+    const board = document.querySelector("#board");
+    const movesEl = document.querySelector("#moves");
+    const messageEl = document.querySelector("#message");
+    const roundLabel = document.querySelector("#roundLabel");
+    const reset = document.querySelector("#reset");
+    const next = document.querySelector("#next");
+
+    let currentSet = 0;
+    let moves = 0;
+    let firstCard = null;
+    let secondCard = null;
+    let locked = false;
+    let matched = 0;
+
+    function shuffle(items) {
+      return [...items].sort(() => Math.random() - 0.5);
+    }
+
+    function cardBackSvg() {
+      return `
+        <svg viewBox="0 0 120 120" aria-hidden="true">
+          <g fill="none" stroke="#151515" stroke-width="8" stroke-linecap="round">
+            <path d="M44 84 C30 66 41 49 57 52 C75 55 80 78 59 91 C47 98 32 93 33 80"></path>
+            <path d="M59 53 C46 33 68 18 80 32 C91 45 76 62 59 53"></path>
+          </g>
+        </svg>`;
+    }
+
+    function staffNoteSvg(note) {
+      const x = 112;
+      const stemX = x + 11;
+      const stemTop = Math.max(18, note.y - 48);
+      const ledger = note.ledger ? `<line x1="${x - 26}" y1="${note.y}" x2="${x + 26}" y2="${note.y}" stroke-width="3.2"></line>` : "";
+
+      return `
+        <svg class="symbol" viewBox="0 0 220 132" role="img" aria-label="Nota">
+          <g stroke="#151515" stroke-width="2.8" stroke-linecap="round">
+            <line x1="38" y1="42" x2="184" y2="42"></line>
+            <line x1="38" y1="54" x2="184" y2="54"></line>
+            <line x1="38" y1="66" x2="184" y2="66"></line>
+            <line x1="38" y1="78" x2="184" y2="78"></line>
+            <line x1="38" y1="90" x2="184" y2="90"></line>
+            ${ledger}
+          </g>
+          <text x="42" y="104" font-family="Georgia, 'Times New Roman', serif" font-size="100" fill="#151515" aria-hidden="true">&#119070;</text>
+          <g fill="#151515" stroke="#151515" stroke-width="2.6">
+            <ellipse cx="${x}" cy="${note.y}" rx="8.8" ry="6.3" transform="rotate(-18 ${x} ${note.y})"></ellipse>
+            <line x1="${stemX}" y1="${note.y - 2}" x2="${stemX}" y2="${stemTop}" stroke-linecap="round"></line>
+          </g>
+        </svg>`;
+    }
+
+    function drawHead(x, y, filled = true) {
+      return `<ellipse cx="${x}" cy="${y}" rx="15" ry="10.5" transform="rotate(-18 ${x} ${y})" ${filled ? "" : 'fill="white"'}></ellipse>`;
+    }
+
+    function drawSingle(item, x, y, scale = 1) {
+      const stemX = x + 15 * scale;
+      const stemTop = y - 68 * scale;
+      const head = (filled) => `<ellipse cx="${x}" cy="${y}" rx="${15 * scale}" ry="${10.5 * scale}" transform="rotate(-18 ${x} ${y})" ${filled ? "" : 'fill="white"'}></ellipse>`;
+
+      if (item === "whole") {
+        return `<g fill="white" stroke="#151515" stroke-width="${5 * scale}">${head(false)}</g>`;
+      }
+
+      if (item === "halfDot") {
+        return `
+          <g fill="white" stroke="#151515" stroke-width="${4.2 * scale}">
+            ${head(false)}
+            <line x1="${stemX}" y1="${y - 4 * scale}" x2="${stemX}" y2="${stemTop}" stroke-linecap="round"></line>
+          </g>
+          <circle cx="${x + 38 * scale}" cy="${y - 2 * scale}" r="${4.6 * scale}" fill="#151515"></circle>`;
+      }
+
+      if (item === "half") {
+        return `
+          <g fill="white" stroke="#151515" stroke-width="${4.2 * scale}">
+            ${head(false)}
+            <line x1="${stemX}" y1="${y - 4 * scale}" x2="${stemX}" y2="${stemTop}" stroke-linecap="round"></line>
+          </g>`;
+      }
+
+      if (item === "quarter") {
+        return `
+          <g fill="#151515" stroke="#151515" stroke-width="${4.2 * scale}">
+            ${head(true)}
+            <line x1="${stemX}" y1="${y - 4 * scale}" x2="${stemX}" y2="${stemTop}" stroke-linecap="round"></line>
+          </g>`;
+      }
+
+      if (item === "quarterRest") {
+        return `
+          <path d="M ${x + 8 * scale} ${y - 58 * scale}
+                   L ${x - 4 * scale} ${y - 42 * scale}
+                   L ${x + 10 * scale} ${y - 26 * scale}
+                   L ${x - 4 * scale} ${y - 8 * scale}
+                   C ${x + 18 * scale} ${y - 6 * scale}, ${x + 24 * scale} ${y + 18 * scale}, ${x + 3 * scale} ${y + 25 * scale}
+                   C ${x - 14 * scale} ${y + 30 * scale}, ${x - 22 * scale} ${y + 13 * scale}, ${x - 6 * scale} ${y + 8 * scale}"
+                fill="none" stroke="#151515" stroke-width="${8 * scale}" stroke-linecap="round" stroke-linejoin="round"></path>`;
+      }
+
+      if (item === "halfRest") {
+        return `
+          <g fill="#151515" stroke="#151515" stroke-width="${3 * scale}">
+            <line x1="${x - 30 * scale}" y1="${y}" x2="${x + 30 * scale}" y2="${y}"></line>
+            <rect x="${x - 18 * scale}" y="${y - 15 * scale}" width="${36 * scale}" height="${15 * scale}" rx="${2 * scale}"></rect>
+          </g>`;
+      }
+
+      if (item === "wholeRest") {
+        return `
+          <g fill="#151515" stroke="#151515" stroke-width="${3 * scale}">
+            <line x1="${x - 30 * scale}" y1="${y}" x2="${x + 30 * scale}" y2="${y}"></line>
+            <rect x="${x - 18 * scale}" y="${y}" width="${36 * scale}" height="${15 * scale}" rx="${2 * scale}"></rect>
+          </g>`;
+      }
+
+      if (item === "eighthRest") {
+        return `
+          <path d="M ${x - 8 * scale} ${y - 48 * scale}
+                   C ${x + 12 * scale} ${y - 44 * scale}, ${x + 10 * scale} ${y - 24 * scale}, ${x - 7 * scale} ${y - 28 * scale}
+                   C ${x - 20 * scale} ${y - 31 * scale}, ${x - 18 * scale} ${y - 48 * scale}, ${x - 4 * scale} ${y - 48 * scale}
+                   C ${x + 12 * scale} ${y - 48 * scale}, ${x + 16 * scale} ${y - 38 * scale}, ${x + 8 * scale} ${y - 23 * scale}
+                   L ${x - 12 * scale} ${y + 24 * scale}"
+                fill="none" stroke="#151515" stroke-width="${7 * scale}" stroke-linecap="round" stroke-linejoin="round"></path>`;
+      }
+
+      if (item === "eighth") {
+        return `
+          <g fill="#151515" stroke="#151515" stroke-width="${4.2 * scale}">
+            ${head(true)}
+            <line x1="${stemX}" y1="${y - 4 * scale}" x2="${stemX}" y2="${stemTop}" stroke-linecap="round"></line>
+            <path d="M ${stemX} ${stemTop} C ${stemX + 26 * scale} ${stemTop + 10 * scale}, ${stemX + 24 * scale} ${stemTop + 36 * scale}, ${stemX + 4 * scale} ${stemTop + 42 * scale}" fill="none" stroke-linecap="round"></path>
+          </g>`;
+      }
+
+      if (item === "beamedEighths") {
+        const x2 = x + 48 * scale;
+        const stemX2 = x2 + 15 * scale;
+        return `
+          <g fill="#151515" stroke="#151515" stroke-width="${4.2 * scale}">
+            ${head(true)}
+            <ellipse cx="${x2}" cy="${y}" rx="${15 * scale}" ry="${10.5 * scale}" transform="rotate(-18 ${x2} ${y})"></ellipse>
+            <line x1="${stemX}" y1="${y - 4 * scale}" x2="${stemX}" y2="${stemTop}" stroke-linecap="round"></line>
+            <line x1="${stemX2}" y1="${y - 4 * scale}" x2="${stemX2}" y2="${stemTop}" stroke-linecap="round"></line>
+            <line x1="${stemX}" y1="${stemTop}" x2="${stemX2}" y2="${stemTop}" stroke-width="${9 * scale}" stroke-linecap="butt"></line>
+          </g>`;
+      }
+
+      return "";
+    }
+
+    function rhythmSvg(definition) {
+      const items = definition.items;
+      const spacing = items.length > 2 ? 70 : 92;
+      const start = 160 - ((items.length - 1) * spacing) / 2;
+      const scale = items.some(item => item === "beamedEighths") || items.length > 2 ? 0.68 : 0.82;
+      const y = 110;
+
+      return `
+        <svg class="symbol" viewBox="0 0 320 180" role="img" aria-label="Rytmická hodnota">
+          ${items.map((item, index) => drawSingle(item, start + index * spacing, y, scale)).join("")}
+        </svg>`;
+    }
+
+    function symbolSvg(definition) {
+      if (definition.kind === "staff") {
+        return staffNoteSvg(definition);
+      }
+      return rhythmSvg(definition);
+    }
+
+    function createCard(card) {
+      const button = document.createElement("button");
+      button.className = "card";
+      button.type = "button";
+      button.dataset.id = card.id;
+      button.dataset.pair = card.pair;
+      button.setAttribute("aria-label", "Kartička pexesa");
+      button.innerHTML = `
+        <span class="card-inner">
+          <span class="face back">${cardBackSvg()}</span>
+          <span class="face front">${symbolSvg(card.definition)}</span>
+        </span>`;
+      button.addEventListener("click", () => flipCard(button));
+      return button;
+    }
+
+    function startSet(index = currentSet) {
+      currentSet = index;
+      moves = 0;
+      matched = 0;
+      firstCard = null;
+      secondCard = null;
+      locked = false;
+      movesEl.textContent = "0";
+      roundLabel.textContent = `Pexeso ${currentSet + 1} / ${sets.length}`;
+      messageEl.textContent = "Otoč dvě kartičky";
+      messageEl.className = "message";
+      next.classList.remove("show");
+      next.textContent = currentSet === sets.length - 1 ? "Hrát znovu od začátku" : "Další pexeso";
+      board.replaceChildren();
+
+      const cards = sets[currentSet].flatMap(([pair, definition]) => [
+        { id: `${pair}-a`, pair, definition },
+        { id: `${pair}-b`, pair, definition }
+      ]);
+
+      shuffle(cards).forEach(card => board.append(createCard(card)));
+    }
+
+    function flipCard(card) {
+      if (locked || card.classList.contains("is-open") || card.classList.contains("is-matched")) {
+        return;
+      }
+
+      card.classList.add("is-open");
+
+      if (!firstCard) {
+        firstCard = card;
+        return;
+      }
+
+      secondCard = card;
+      moves += 1;
+      movesEl.textContent = String(moves);
+      locked = true;
+
+      if (firstCard.dataset.pair === secondCard.dataset.pair) {
+        firstCard.classList.add("is-matched");
+        secondCard.classList.add("is-matched");
+        matched += 1;
+        firstCard = null;
+        secondCard = null;
+        locked = false;
+
+        if (matched === 8) {
+          messageEl.textContent = "Hotovo!";
+          messageEl.className = "message done";
+          next.classList.add("show");
+        } else {
+          messageEl.textContent = "Správná dvojice";
+          messageEl.className = "message done";
+        }
+        return;
+      }
+
+      messageEl.textContent = "Zkus další dvojici";
+      messageEl.className = "message";
+      setTimeout(() => {
+        firstCard.classList.remove("is-open");
+        secondCard.classList.remove("is-open");
+        firstCard = null;
+        secondCard = null;
+        locked = false;
+      }, 780);
+    }
+
+    reset.addEventListener("click", () => startSet(currentSet));
+
+    next.addEventListener("click", () => {
+      const nextSet = currentSet === sets.length - 1 ? 0 : currentSet + 1;
+      startSet(nextSet);
+    });
+
+    startSet(0);
+  </script>
+</body>
+</html>
